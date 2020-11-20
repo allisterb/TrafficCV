@@ -133,3 +133,4 @@ dmypy.json
 demo_videos/
 models/
 results/
+.vscode/settings.json
