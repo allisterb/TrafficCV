@@ -1,5 +1,6 @@
 # Based on https://github.com/ahmetozlu/vehicle_counting_tensorflow/blob/master/vehicle_detection_main.py
-# vehicle_detection_main.py is Copyright (c) 2018 Ozlu
+# vehicle_detection_main.py is Copyright (c) 2018 Ahmet Özlü
+
 import os
 
 import numpy as np
@@ -15,30 +16,29 @@ def load_image_into_numpy_array(image):
     return np.array(image.getdata()).reshape((im_height, im_width,
             3)).astype(np.uint8)
 
-def run():
+def run(model, video):
     """Main detection function."""
     # Object detection imports
     
-    MODEL_NAME = 'ssd_mobilenet_v2_coco_2018_03_29'
-    MODEL_FILE = os.path.join('models', MODEL_NAME, 'frozen_inference_graph.pb')
-    PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
-    NUM_CLASSES = 90
+    model_file = os.path.join(model, 'frozen_inference_graph.pb')
+    labels = os.path.join('data', 'mscoco_label_map.pbtxt')
+    num_classes = 90
 
-    cap = cv2.VideoCapture('demo_videos/sub-1504619634606.mp4')
+    cap = cv2.VideoCapture(video)
 
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         od_graph_def = tf.compat.v1.GraphDef()
-        with tf.gfile.GFile(MODEL_FILE, 'rb') as fid:
+        with tf.gfile.GFile(model_file, 'rb') as fid:
             serialized_graph = fid.read()
             od_graph_def.ParseFromString(serialized_graph)
             tf.import_graph_def(od_graph_def, name='')
 
     # Loading label map
     # Label maps map indices to category names, so that when our convolution network predicts 5, we know that this corresponds to airplane. Here I use internal utility functions, but anything that returns a dictionary mapping integers to appropriate string labels would be fine
-    label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
+    label_map = label_map_util.load_labelmap(labels)
     categories = label_map_util.convert_label_map_to_categories(label_map,
-            max_num_classes=NUM_CLASSES, use_display_name=True)
+            max_num_classes=num_classes, use_display_name=True)
     category_index = label_map_util.create_category_index(categories)
 
     total_passed_vehicle = 0

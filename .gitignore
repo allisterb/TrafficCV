@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # TrafficCV
-.vscode
+.vscode/
 demo_videos/
 models/
 results/

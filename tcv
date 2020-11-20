@@ -1,4 +1,4 @@
 #!/bin/bash
 display=$1
 shift
-DISPLAY=$display python cli.py $*
+TF_CPP_MIN_LOG_LEVEL=1 DISPLAY=$display python cli.py $*
