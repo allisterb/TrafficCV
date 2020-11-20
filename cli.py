@@ -4,7 +4,7 @@ import logging
 
 from pyfiglet import Figlet
 
-from detectors import vehicle_detector
+from detectors import mobilenet_vehicle_detector
 
 def print_logo():
 """Print program logo"""
