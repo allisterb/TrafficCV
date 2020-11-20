@@ -1,2 +1,4 @@
 #!/bin/bash
-python cli.py $*
+display=$1
+shift
+DISPLAY=$display python cli.py $*
