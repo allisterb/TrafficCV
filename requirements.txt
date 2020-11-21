@@ -1,6 +1,7 @@
 numpy
 scipy
 scikit-image
+dlib
 tensorflow==1.14.0
 opencv-python>=4.4.0
 pyfiglet
