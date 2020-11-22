@@ -1,8 +1,4 @@
-# Based on https://github.com/ahmetozlu/vehicle_counting_tensorflow/blob/master/vehicle_detection_main.py
-# vehicle_detection_main.py is Copyright (c) 2018 Ahmet Özlü
-
-#! /usr/bin/env python
-# coding=utf-8
+# Based on https://github.com/YunYang1994/tensorflow-yolov3/blob/master/video_demo.py
 #================================================================
 #   Copyright (C) 2018 * Ltd. All rights reserved.
 #
@@ -14,26 +10,24 @@
 #
 #================================================================
 
-import cv2
 import time
+
+import cv2
 import numpy as np
-import utils.utils as utils
 import tensorflow as tf
 from PIL import Image
 
-def run(video):
+import yolov3utils.utils as utils
 
+def run(model, video):
     return_elements = ["input/input_data:0", "pred_sbbox/concat_2:0", "pred_mbbox/concat_2:0", "pred_lbbox/concat_2:0"]
-    pb_file         = "./yolov3_coco.pb"
-    video_path      = "./docs/images/road.mp4"
-    # video_path      = 0
     num_classes     = 80
     input_size      = 416
     graph           = tf.Graph()
-    return_tensors  = utils.read_pb_return_tensors(graph, pb_file, return_elements)
+    return_tensors  = utils.read_pb_return_tensors(graph, model, return_elements)
 
     with tf.Session(graph=graph) as sess:
-        vid = cv2.VideoCapture(video_path)
+        vid = cv2.VideoCapture(video)
         while True:
             return_value, frame = vid.read()
             if return_value:
@@ -62,11 +56,8 @@ def run(video):
             exec_time = curr_time - prev_time
             result = np.asarray(image)
             info = "time: %.2f ms" %(1000*exec_time)
-            cv2.namedWindow("result", cv2.WINDOW_AUTOSIZE)
+            cv2.namedWindow("TrafficCV YOLOv3", cv2.WINDOW_AUTOSIZE)
             result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             cv2.imshow("result", result)
             if cv2.waitKey(1) & 0xFF == ord('q'): break
-
-
-
 

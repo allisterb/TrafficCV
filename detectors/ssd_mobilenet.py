@@ -1,6 +1,10 @@
 # Based on https://github.com/ahmetozlu/vehicle_counting_tensorflow/blob/master/vehicle_detection_main.py
 # vehicle_detection_main.py is Copyright (c) 2018 Ahmet Özlü
-
+# ----------------------------------------------
+# --- Author         : Ahmet Ozlu
+# --- Mail           : ahmetozlu93@gmail.com
+# --- Date           : 27th January 2018
+# ----------------------------------------------
 import os
 
 import numpy as np

@@ -1,5 +1,4 @@
-#! /usr/bin/env python
-# coding=utf-8
+# Based on https://github.com/YunYang1994/tensorflow-yolov3/blob/master/core/utils.py
 #================================================================
 #   Copyright (C) 2019 * Ltd. All rights reserved.
 #
@@ -11,12 +10,12 @@
 #
 #================================================================
 
-import cv2
 import random
 import colorsys
+
+import cv2
 import numpy as np
 import tensorflow as tf
-
 
 def read_class_names(class_file_name):
     '''loads class name from a file'''
@@ -33,7 +32,6 @@ def get_anchors(anchors_path):
         anchors = f.readline()
     anchors = np.array(anchors.split(','), dtype=np.float32)
     return anchors.reshape(3, 3, 2)
-
 
 def image_preporcess(image, target_size, gt_boxes=None):
 
@@ -61,9 +59,7 @@ def image_preporcess(image, target_size, gt_boxes=None):
 
 
 def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
-    """
-    bboxes: [x_min, y_min, x_max, y_max, probability, cls_id] format coordinates.
-    """
+    """bboxes: [x_min, y_min, x_max, y_max, probability, cls_id] format coordinates."""
 
     num_classes = len(classes)
     image_h, image_w, _ = image.shape
