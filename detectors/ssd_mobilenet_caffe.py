@@ -1,4 +1,4 @@
-# Based on speed_estimation_dl_video 
+# Based on speed_estimation_dl_video.py 
 # OpenCV Vehicle Detection, Tracking, and Speed Estimation by Adrian Rosebrock
 # https://www.pyimagesearch.com/2019/12/02/opencv-vehicle-detection-tracking-and-speed-estimation/
 # © 2020 PyImageSearch
@@ -20,8 +20,6 @@ import numpy as np
 import imutils
 import dlib
 import cv2
-
-# python speed_estimation_dl_video.py --conf config/config.json --input sample_data/cars.mp4
 
 class Conf:
 	def __init__(self, confPath):

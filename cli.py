@@ -51,8 +51,7 @@ else:
     model = os.path.join('models', args.model)
 if (not os.path.exists(model)) or (not os.path.isdir(model)):
     print(f"The path {model} does not exist or is not a directory. Download models from the TF1 detection model zoo: \n\
-        https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md. \n\
-        and place in the models subdirectory.")
+        https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md and place in the models subdirectory.")
     sys.exit(1)
 video = args.video
 
@@ -72,3 +71,7 @@ elif model.startswith(os.path.join('models', 'yolov3')):
     print(f"Using YOLOv3 for MSCOCO.")
     from detectors import yolov3
     yolov3.run(model, video)
+elif model.startswith(os.path.join('models', 'kraten_haar')):
+    print(f"Using HAAR cascades.")
+    from detectors import kraten_haar
+    kraten_haar.run(model, video)
