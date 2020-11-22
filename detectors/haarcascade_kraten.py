@@ -1,3 +1,6 @@
+# Based on https://github.com/kraten/vehicle-speed-check/blob/master/speed_check.py 
+# by Kartike Bansal.
+
 import os
 import sys
 import time
@@ -63,9 +66,9 @@ def run(model_dir, video_source):
 				carIDtoDelete.append(carID)
 				
 		for carID in carIDtoDelete:
-			print ('Removing carID ' + str(carID) + ' from list of trackers.')
-			print ('Removing carID ' + str(carID) + ' previous location.')
-			print ('Removing carID ' + str(carID) + ' current location.')
+			# print ('Removing carID ' + str(carID) + ' from list of trackers.')
+			# print ('Removing carID ' + str(carID) + ' previous location.')
+			# print ('Removing carID ' + str(carID) + ' current location.')
 			carTracker.pop(carID, None)
 			carLocation1.pop(carID, None)
 			carLocation2.pop(carID, None)
@@ -100,7 +103,7 @@ def run(model_dir, video_source):
 						matchCarID = carID
 				
 				if matchCarID is None:
-					print ('Creating new tracker ' + str(currentCarID))
+					# print ('Creating new tracker ' + str(currentCarID))
 					
 					tracker = dlib.correlation_tracker()
 					tracker.start_track(image, dlib.rectangle(x, y, x + w, y + h))

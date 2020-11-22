@@ -33,7 +33,7 @@ def get_anchors(anchors_path):
     anchors = np.array(anchors.split(','), dtype=np.float32)
     return anchors.reshape(3, 3, 2)
 
-def image_preporcess(image, target_size, gt_boxes=None):
+def image_preprocess(image, target_size, gt_boxes=None):
 
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
 
@@ -51,12 +51,10 @@ def image_preporcess(image, target_size, gt_boxes=None):
 
     if gt_boxes is None:
         return image_paded
-
     else:
         gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
         gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
         return image_paded, gt_boxes
-
 
 def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
     """bboxes: [x_min, y_min, x_max, y_max, probability, cls_id] format coordinates."""
@@ -91,8 +89,6 @@ def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_la
 
     return image
 
-
-
 def bboxes_iou(boxes1, boxes2):
 
     boxes1 = np.array(boxes1)
@@ -111,8 +107,6 @@ def bboxes_iou(boxes1, boxes2):
 
     return ious
 
-
-
 def read_pb_return_tensors(graph, pb_file, return_elements):
 
     with tf.gfile.FastGFile(pb_file, 'rb') as f:
@@ -123,7 +117,6 @@ def read_pb_return_tensors(graph, pb_file, return_elements):
         return_elements = tf.import_graph_def(frozen_graph_def,
                                               return_elements=return_elements)
     return return_elements
-
 
 def nms(bboxes, iou_threshold, sigma=0.3, method='nms'):
     """
@@ -203,6 +196,3 @@ def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
     coors, scores, classes = pred_coor[mask], scores[mask], classes[mask]
 
     return np.concatenate([coors, scores[:, np.newaxis], classes[:, np.newaxis]], axis=-1)
-
-
-

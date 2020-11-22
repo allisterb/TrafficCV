@@ -36,7 +36,7 @@ def run(model, video):
             else:
                 raise ValueError("No image!")
             frame_size = frame.shape[:2]
-            image_data = utils.image_preporcess(np.copy(frame), [input_size, input_size])
+            image_data = utils.image_preprocess(np.copy(frame), [input_size, input_size])
             image_data = image_data[np.newaxis, ...]
             prev_time = time.time()
 

@@ -4,7 +4,7 @@ import os
 import sys
 import argparse
 import warnings
-
+import logging
 from pyfiglet import Figlet
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -16,6 +16,8 @@ def print_logo():
     print(fig.renderText('TrafficCV') + 'v0.1\n')
     
 parser = argparse.ArgumentParser()
+parser.add_argument("--debug", help="Enable debug-level logging.", 
+                        action="store_true")
 parser.add_argument("--test", help="Test if OpenCV can read from the default camera device.", 
                         action="store_true")
 parser.add_argument("--model", help="The computer vision model to use.")
@@ -23,15 +25,26 @@ parser.add_argument("--video", help="Path to a video file to use as input.",
                         default=0)
 args = parser.parse_args()
 
+if args.debug:
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+    logging.info("Debug mode enabled.")
+else:
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+info = logging.info
+error = logging.error
+warn = logging.warn
+debug = logging.debug
 print_logo()
 
 if args.test:
     import cv2 as cv
-    print("Streaming from default camera device. Press q to quit.")
+    info('Streaming from default camera device. Press q to quit.')
     cap = cv.VideoCapture(0)
     if not cap.isOpened():
-        print("Could not open default camera device.")
+        error("Could not open default camera device.")
         sys.exit()
+    height, width, fps = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv.CAP_PROP_FRAME_WIDTH)), cap.get(cv.CAP_PROP_FPS) 
+    info(f'Camera resolution: {width}x{height} {fps}fps.')
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -43,7 +56,8 @@ if args.test:
     cap.release()
     cv.destroyAllWindows()
     sys.exit(0)
-
+    
+video = args.video
 if args.model is None:
     model = os.path.join('models', "ssd_mobilenet_v2_coco_2018_03_29")
     print("Using default model ssd_mobilenet_v2_coco_2018_03_29.")
@@ -53,25 +67,23 @@ if (not os.path.exists(model)) or (not os.path.isdir(model)):
     print(f"The path {model} does not exist or is not a directory. Download models from the TF1 detection model zoo: \n\
         https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md and place in the models subdirectory.")
     sys.exit(1)
-video = args.video
-
 if model.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')):
-    print(f"Using TF SSD with Mobilenet v1 configuration for MSCOCO.")
+    print("Using TensorFlow SSD MobileNetv1 for COCO.")
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model, video)
 elif model.startswith(os.path.join('models', 'ssd_mobilenet_v2_coco')):
-    print(f"Using TF SSD with Mobilenet v2 configuration for MSCOCO.")
+    print("Using TensorFlow SSD MobileNetv2 for COCO.")
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model, video)
-elif model.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
-    print(f"Using Caffe SSD with Mobilenet v1 configuration for MSCOCO.")
-    from detectors import ssd_mobilenet_caffe
-    ssd_mobilenet_caffe.run(video)
 elif model.startswith(os.path.join('models', 'yolov3')):
-    print(f"Using YOLOv3 for MSCOCO.")
+    print("Using TensorFlow YOLOv3 for COCO.")
     from detectors import yolov3
     yolov3.run(model, video)
-elif model.startswith(os.path.join('models', 'kraten_haar')):
-    print(f"Using HAAR cascades.")
-    from detectors import kraten_haar
-    kraten_haar.run(model, video)
+elif model.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
+    print("Using Caffe SSD MobileNetv1 for COCO.")
+    from detectors import ssd_mobilenet_caffe
+    ssd_mobilenet_caffe.run(video)
+elif model.startswith(os.path.join('models', 'haarcascade')):
+    print("Using Haar cascade classifier.")
+    from detectors import haarcascade_kraten
+    haarcascade_kraten.run(model, video)

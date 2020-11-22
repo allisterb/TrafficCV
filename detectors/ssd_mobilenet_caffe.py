@@ -238,7 +238,7 @@ def run(video):
 	print("[INFO] loading model...")
 	net = cv2.dnn.readNetFromCaffe(os.path.join('models', 'ssd_mobilenet_caffe', 'MobileNetSSD_deploy.prototxt'),
 		os.path.join('models', 'ssd_mobilenet_caffe', 'MobileNetSSD_deploy.caffemodel'))
-	#net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
+	net.setPreferableTarget(cv2.dnn.)
 
 	# initialize the video stream and allow the camera sensor to warmup
 	vs = cv2.VideoCapture(video)
