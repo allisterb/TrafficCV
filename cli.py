@@ -11,9 +11,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def print_logo():
-    """Print program logo"""
-    f = Figlet(font='chunky')
-    print(f.renderText('TrafficCV'))
+    """Print program logo."""
+    fig = Figlet(font='chunky')
+    print(fig.renderText('TrafficCV') + 'v0.1\n')
     
 parser = argparse.ArgumentParser()
 parser.add_argument("--test", help="Test if OpenCV can read from the default camera device.", 
