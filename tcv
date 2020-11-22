@@ -1,8 +1,8 @@
 #!/bin/bash
 display=$1
-shift
-if [[ $# -eq 0 ]]; then
+if [[ $display != *:* ]]; then
     echo "You must specify an X display to run on e.g. tcv $DISPLAY"
     exit 1
 fi
+shift
 TF_CPP_MIN_LOG_LEVEL=1 DISPLAY=$display python cli.py $*
