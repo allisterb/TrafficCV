@@ -21,7 +21,7 @@ def estimate_speed(ppm, fps, location1, location2):
     speed = d_meters * fps * 3.6
     return speed
 
-def run(model_dir, video_source, model_args):
+def run(model_dir, video_source, detector_args):
     """Run the classifier and detector."""
     info = logging.info
     error = logging.error
@@ -35,15 +35,15 @@ def run(model_dir, video_source, model_args):
     classifier = cv2.CascadeClassifier(model_file)
     video = cv2.VideoCapture(video_source)
     args = {}
-    if model_args is not None:
-        for a in model_args.split(','):
+    if detector_args is not None:
+        for a in detector_args.split(','):
             kv = a.split('=')
             if len(kv) != 2:
-                error(f'The model argument {kv} is malformed.')
+                error(f'The detector argument {kv} is malformed.')
                 sys.exit(1)
             k, v = kv[0], kv[1]
             args[k] = v
-        debug(f'Model arguments are {args}.')
+        debug(f'Detector arguments are {args}.')
     ppm = 8.8
     if 'ppm' in args:
         ppm = args['ppm']
@@ -54,6 +54,11 @@ def run(model_dir, video_source, model_args):
         fps = args['fps']
     else:
         info ('fps argument not specified. Using default value 18.')
+    fc = 10
+    if 'fc' in args:
+        fc = args['fc']
+    else:
+        info ('fc argument not specified. Using default value 10.')
     VIDEO_WIDTH = 1280
     VIDEO_HEIGHT = 720
     RECT_COLOR = (0, 255, 0)
@@ -88,7 +93,7 @@ def run(model_dir, video_source, model_args):
             car_location_1.pop(car_id, None)
             car_location_2.pop(car_id, None)
         
-        if not (frame_counter % 10):
+        if not (frame_counter % fc):
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))
             
@@ -97,15 +102,12 @@ def run(model_dir, video_source, model_args):
                 y = int(_y)
                 w = int(_w)
                 h = int(_h)
-            
                 x_bar = x + 0.5 * w
                 y_bar = y + 0.5 * h
                 
                 matched_car_id = None
-            
                 for car_id in car_tracker.keys():
                     tracked_position = car_tracker[car_id].get_position()
-                    
                     t_x = int(tracked_position.left())
                     t_y = int(tracked_position.top())
                     t_w = int(tracked_position.width())
