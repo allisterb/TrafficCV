@@ -23,6 +23,7 @@ parser.add_argument("--test", help="Test if OpenCV can read from the default cam
 parser.add_argument("--model", help="The computer vision model to use.")
 parser.add_argument("--video", help="Path to a video file to use as input.", 
                         default=0)
+parser.add_argument("--args", help="Arguments to pass to the specified model and detector comma-delimited as key=value e.g --args \'ppm=4,fps=1\'")
 args = parser.parse_args()
 
 if args.debug:
@@ -86,4 +87,4 @@ elif model.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
 elif model.startswith(os.path.join('models', 'haarcascade')):
     print("Using Haar cascade classifier. Press q in video window to quit.")
     from detectors import haarcascade_kraten
-    haarcascade_kraten.run(model, video)
+    haarcascade_kraten.run(model, video, args.args)

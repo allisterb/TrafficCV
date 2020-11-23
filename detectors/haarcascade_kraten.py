@@ -10,31 +10,50 @@ import logging
 import cv2
 import dlib
 
-def estimate_speed(location1, location2):
+def estimate_speed(ppm, fps, location1, location2):
     """Estimate the speed of a vehicle assuming pixel-per-metre and fps constants."""
     d_pixels = math.sqrt(math.pow(location2[0] - location1[0], 2) + math.pow(location2[1] - location1[1], 2))
     # Pixel-per-m constant
-    ppm = 8.8
+    #ppm = 8.8
     # fps constant
-    fps = 18
+    #fps = 18
     d_meters = d_pixels / ppm
     speed = d_meters * fps * 3.6
     return speed
 
-def run(model_dir, video_source):
+def run(model_dir, video_source, model_args):
     """Run the classifier and detector."""
     info = logging.info
     error = logging.error
     warn = logging.warn
     debug = logging.debug
-
+    
     model_file = os.path.join(model_dir, 'haarcascade_kraten.xml')
     if not os.path.exists(model_file):
         error(f'{model_file} does not exist.')
         sys.exit(1)
     classifier = cv2.CascadeClassifier(model_file)
     video = cv2.VideoCapture(video_source)
-    
+    args = {}
+    if model_args is not None:
+        for a in model_args.split(','):
+            kv = a.split('=')
+            if len(kv) != 2:
+                error(f'The model argument {kv} is malformed.')
+                sys.exit(1)
+            k, v = kv[0], kv[1]
+            args[k] = v
+        debug(f'Model arguments are {args}.')
+    ppm = 8.8
+    if 'ppm' in args:
+        ppm = args['ppm']
+    else:
+        info ('ppm argument not specified. Using default value 8.8.')
+    fps = 18
+    if 'fps' in args:
+        fps = args['fps']
+    else:
+        info ('fps argument not specified. Using default value 18.')
     VIDEO_WIDTH = 1280
     VIDEO_HEIGHT = 720
     RECT_COLOR = (0, 255, 0)
@@ -64,9 +83,7 @@ def run(model_dir, video_source):
                 car_ids_to_delete.append(car_id)
                 
         for car_id in car_ids_to_delete:
-            debug('Removing car id ' + str(car_id) + ' from list of tracked cars.')
-            # debug('Removing vehicle id ' + str(car_id) + ' previous location.')
-            # debug('Removing vehicle id ' + str(car_id) + ' current location.')
+            debug(f'Removing car id {car_id} + from list of tracked cars.')
             car_tracker.pop(car_id, None)
             car_location_1.pop(car_id, None)
             car_location_2.pop(car_id, None)
@@ -101,15 +118,12 @@ def run(model_dir, video_source):
                         matched_car_id = car_id
                 
                 if matched_car_id is None:
-                    debug ('Creating new vehicle tracker with id ' + str(current_car_id))
-                    
+                    debug (f'Creating new car tracker with id {current_car_id}.' )
                     tracker = dlib.correlation_tracker()
                     tracker.start_track(image, dlib.rectangle(x, y, x + w, y + h))
-                    
                     car_tracker[current_car_id] = tracker
                     car_location_1[current_car_id] = [x, y, w, h]
-
-                    current_car_id = current_car_id + 1
+                    current_car_id += 1
         
         for car_id in car_tracker.keys():
             tracked_position = car_tracker[car_id].get_position()
@@ -132,13 +146,15 @@ def run(model_dir, video_source):
                 car_location_1[i] = [x2, y2, w2, h2]
                 if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
                     if (speed[i] == None or speed[i] == 0) and y1 >= 275 and y1 <= 285:
-                        speed[i] = estimate_speed([x1, y1, w1, h1], [x2, y2, w2, h2])
+                        ppm = args['ppm'] if 'ppm' in args else 8.8
+
+                        speed[i] = estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
 
                     #if y1 > 275 and y1 < 285:
                     if speed[i] != None and y1 >= 180:
                         cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
 
-        cv2.imshow('OpenCV Haar Cascade', result)
+        cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
