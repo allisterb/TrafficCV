@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "cli.py",
-            "args": [ "--convert", "--model", "yolov3_coco"],
+            "args": [ "--model", "ssd_mobilenet_caffe", "--video", "demo_videos\\cars_horizontal.mp4"],
             "console": "integratedTerminal"
         }
     ]

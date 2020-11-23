@@ -180,7 +180,7 @@ def run(model, video):
                     1,
                     cv2.FONT_HERSHEY_COMPLEX_SMALL,
                     )
-                cv2.imshow('vehicle detection', input_frame)
+                cv2.imshow('OpenCV SSD MobileNet', input_frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
             cap.release()

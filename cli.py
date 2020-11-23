@@ -43,7 +43,7 @@ if args.test:
     if not cap.isOpened():
         error("Could not open default camera device.")
         sys.exit()
-    height, width, fps = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv.CAP_PROP_FRAME_WIDTH)), cap.get(cv.CAP_PROP_FPS) 
+    height, width, fps = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv.CAP_PROP_FPS)) 
     info(f'Camera resolution: {width}x{height} {fps}fps.')
     while True:
         ret, frame = cap.read()
@@ -68,22 +68,22 @@ if (not os.path.exists(model)) or (not os.path.isdir(model)):
         https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md and place in the models subdirectory.")
     sys.exit(1)
 if model.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')):
-    print("Using TensorFlow SSD MobileNetv1 for COCO.")
+    print("Using TensorFlow SSD MobileNetv1 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model, video)
 elif model.startswith(os.path.join('models', 'ssd_mobilenet_v2_coco')):
-    print("Using TensorFlow SSD MobileNetv2 for COCO.")
+    print("Using TensorFlow SSD MobileNetv2 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model, video)
 elif model.startswith(os.path.join('models', 'yolov3')):
-    print("Using TensorFlow YOLOv3 for COCO.")
+    print("Using TensorFlow YOLOv3 for COCO. Press q in video window to quit.")
     from detectors import yolov3
     yolov3.run(model, video)
 elif model.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
-    print("Using Caffe SSD MobileNetv1 for COCO.")
+    print("Using Caffe SSD MobileNetv1 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet_caffe
     ssd_mobilenet_caffe.run(video)
 elif model.startswith(os.path.join('models', 'haarcascade')):
-    print("Using Haar cascade classifier.")
+    print("Using Haar cascade classifier. Press q in video window to quit.")
     from detectors import haarcascade_kraten
     haarcascade_kraten.run(model, video)
