@@ -13,13 +13,10 @@ import dlib
 def estimate_speed(ppm, fps, location1, location2):
     """Estimate the speed of a vehicle assuming pixel-per-metre and fps constants."""
     d_pixels = math.sqrt(math.pow(location2[0] - location1[0], 2) + math.pow(location2[1] - location1[1], 2))
-    # Pixel-per-m constant
-    #ppm = 8.8
-    # fps constant
-    #fps = 18
     d_meters = d_pixels / ppm
     speed = d_meters * fps * 3.6
     return speed
+
 
 def run(model_dir, video_source, args):
     """Run the classifier and detector."""
@@ -44,6 +41,11 @@ def run(model_dir, video_source, args):
         fps = args['fps']
     else:
         info ('fps argument not specified. Using default value 18.')
+    fc = 10
+    if 'fc' in args:
+        fc = args['fc']
+    else:
+        info ('fc argument not specified. Using default value 10.')
     VIDEO_WIDTH = 1280
     VIDEO_HEIGHT = 720
     RECT_COLOR = (0, 255, 0)
@@ -78,7 +80,7 @@ def run(model_dir, video_source, args):
             car_location_1.pop(car_id, None)
             car_location_2.pop(car_id, None)
         
-        if not (frame_counter % 10):
+        if not (frame_counter % fc):
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))
             
@@ -87,15 +89,12 @@ def run(model_dir, video_source, args):
                 y = int(_y)
                 w = int(_w)
                 h = int(_h)
-            
                 x_bar = x + 0.5 * w
                 y_bar = y + 0.5 * h
                 
                 matched_car_id = None
-            
                 for car_id in car_tracker.keys():
                     tracked_position = car_tracker[car_id].get_position()
-                    
                     t_x = int(tracked_position.left())
                     t_y = int(tracked_position.top())
                     t_w = int(tracked_position.width())
