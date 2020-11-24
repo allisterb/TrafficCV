@@ -21,7 +21,7 @@ def estimate_speed(ppm, fps, location1, location2):
     speed = d_meters * fps * 3.6
     return speed
 
-def run(model_dir, video_source, model_args):
+def run(model_dir, video_source, args):
     """Run the classifier and detector."""
     info = logging.info
     error = logging.error
@@ -34,16 +34,6 @@ def run(model_dir, video_source, model_args):
         sys.exit(1)
     classifier = cv2.CascadeClassifier(model_file)
     video = cv2.VideoCapture(video_source)
-    args = {}
-    if model_args is not None:
-        for a in model_args.split(','):
-            kv = a.split('=')
-            if len(kv) != 2:
-                error(f'The model argument {kv} is malformed.')
-                sys.exit(1)
-            k, v = kv[0], kv[1]
-            args[k] = v
-        debug(f'Model arguments are {args}.')
     ppm = 8.8
     if 'ppm' in args:
         ppm = args['ppm']

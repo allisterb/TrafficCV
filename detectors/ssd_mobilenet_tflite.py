@@ -6,18 +6,17 @@
 # --- Date           : 27th January 2018
 # ----------------------------------------------
 import os
-import logging
+
 import numpy as np
 import tensorflow as tf
+import platform
 import cv2
 
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
-info = logging.info
-error = logging.error
-warn = logging.warn
-debug = logging.debug
+def make_interpreter(model_file):
+  return tf.lite.Interpreter(model_path=model_file)
 
 def load_image_into_numpy_array(image):
     """Load image into Numpy array"""
@@ -27,13 +26,13 @@ def load_image_into_numpy_array(image):
 
 def run(model, video, args):
     """Run detector and classifier."""
-    model_file = os.path.join(model, 'frozen_inference_graph.pb')
-    labels = os.path.join('labels', 'mscoco_label_map.pbtxt')
+
+    model_file = os.path.join(model, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')
+    labels = os.path.join('data', 'mscoco_label_map.pbtxt')
     num_classes = 90
-    video_device = 'Camera' if video == 0 else 'Cideo'
+
     cap = cv2.VideoCapture(video)
-    height, width, fps = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FPS)) 
-    info(f'{video_device} resolution: {width}x{height} {fps}fps.')
+
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         od_graph_def = tf.compat.v1.GraphDef()
@@ -56,6 +55,7 @@ def run(model, video, args):
     color = 'waiting...'
     with detection_graph.as_default():
         with tf.compat.v1.Session(graph=detection_graph) as sess:
+
             # Definite input and output Tensors for detection_graph
             image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
 
@@ -71,10 +71,13 @@ def run(model, video, args):
             # for all the frames that are extracted from input video
             while cap.isOpened():
                 (ret, frame) = cap.read()
+
                 if not ret:
+                    print ('end of the video file...')
                     break
+
                 input_frame = frame
-                
+
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                 image_np_expanded = np.expand_dims(input_frame, axis=0)
 
