@@ -9,9 +9,12 @@ import os, sys
 
 import numpy as np
 import tflite_runtime.interpreter as tflite
+import tflite_detect
 import tensorflow as tf
 import platform
 import cv2
+from PIL import Image
+from PIL import ImageDraw
 
 from utils import label_map_util
 from utils import visualization_utils as vis_util
@@ -43,6 +46,9 @@ def run(model, video, args):
     labels = os.path.join('data', 'mscoco_label_map.pbtxt')
     num_classes = 90
     interpreter = make_interpreter(model_file)
+    image = Image.open(args.input)
+    scale = detect.set_input(interpreter, image.size,
+                           lambda size: image.resize(size, Image.ANTIALIAS))
     cap = cv2.VideoCapture(video)
     if args['info']:
         print(interpreter.get_input_details())
@@ -86,13 +92,11 @@ def run(model, video, args):
             # for all the frames that are extracted from input video
             while cap.isOpened():
                 (ret, frame) = cap.read()
-
                 if not ret:
-                    print ('end of the video file...')
+                    print ('End of the video file. Stopping.')
                     break
-
                 input_frame = frame
-
+                
                 # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
                 image_np_expanded = np.expand_dims(input_frame, axis=0)
 

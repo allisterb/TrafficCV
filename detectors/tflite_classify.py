@@ -17,11 +17,8 @@
 import collections
 import operator
 import numpy as np
-import tensorflow as tf
-Class = collections.namedtuple('Class', ['id', 'score'])
 
-def model_info(mode):
-  pass
+Class = collections.namedtuple('Class', ['id', 'score'])
 
 def input_details(interpreter, key):
   """Returns input details by specified key."""

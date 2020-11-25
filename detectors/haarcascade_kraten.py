@@ -17,7 +17,6 @@ def estimate_speed(ppm, fps, location1, location2):
     speed = d_meters * fps * 3.6
     return speed
 
-
 def run(model_dir, video_source, args):
     """Run the classifier and detector."""
     info = logging.info
@@ -49,7 +48,6 @@ def run(model_dir, video_source, args):
     VIDEO_WIDTH = 1280
     VIDEO_HEIGHT = 720
     RECT_COLOR = (0, 255, 0)
-    
     frame_counter = 0
     fps = 0
     current_car_id = 0
@@ -70,10 +68,8 @@ def run(model_dir, video_source, args):
 
         for car_id in car_tracker.keys():
             tracking_quality = car_tracker[car_id].update(image)
-            
             if tracking_quality < 7:
                 car_ids_to_delete.append(car_id)
-                
         for car_id in car_ids_to_delete:
             debug(f'Removing car id {car_id} + from list of tracked cars.')
             car_tracker.pop(car_id, None)
@@ -82,8 +78,8 @@ def run(model_dir, video_source, args):
         
         if not (frame_counter % fc):
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))
-            
+            # Run the classifier on the frame and get bounding boxes of car objects detected.
+            cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))        
             for (_x, _y, _w, _h) in cars:
                 x = int(_x)
                 y = int(_y)
@@ -134,13 +130,10 @@ def run(model_dir, video_source, args):
                 [x2, y2, w2, h2] = car_location_2[i]
                 car_location_1[i] = [x2, y2, w2, h2]
                 if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
-                    if (speed[i] == None or speed[i] == 0) and y1 >= 275 and y1 <= 285:
-                        ppm = args['ppm'] if 'ppm' in args else 8.8
-
+                    # Estimate speed for a car object as it passes through a ROI.
+                    if (speed[i] is None) and y1 >= 275 and y1 <= 285:
                         speed[i] = estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
-
-                    #if y1 > 275 and y1 < 285:
-                    if speed[i] != None and y1 >= 180:
+                    if speed[i] is not None and y1 >= 180:
                         cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
 
         cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
