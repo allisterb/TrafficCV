@@ -30,10 +30,10 @@ def run(model, video, args):
     model_file = os.path.join(model, 'frozen_inference_graph.pb')
     labels = os.path.join('labels', 'mscoco_label_map.pbtxt')
     num_classes = 90
-    video_device = 'Camera' if video == 0 else 'Cideo'
+    video_device = 'Camera' if video == 0 else 'Video'
     cap = cv2.VideoCapture(video)
     height, width, fps = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FPS)) 
-    info(f'{video_device} resolution: {width}x{height} {fps}fps.')
+    info(f'{video_device} resolution: {width}x{height}@{fps}fps.')
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         od_graph_def = tf.compat.v1.GraphDef()

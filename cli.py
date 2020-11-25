@@ -26,6 +26,7 @@ parser.add_argument("--video", help="Path to a video file to use as input.",
 parser.add_argument("--args", help="Arguments to pass to the specified model and detector comma-delimited as key=value e.g --args \'ppm=4,fps=1\'")
 parser.add_argument("--tflite", help="Execute a TFLite version of the model.", action="store_true", default=False)
 parser.add_argument("--edgetpu", help="Execute a TFLite version of the model on an Edge TPU device like the Coral USB accelerator.", action="store_true", default=False)
+parser.add_argument("--info", help="Print out info on the model only.",  action="store_true", default=False)
 args = parser.parse_args()
 
 if args.debug:
@@ -77,42 +78,42 @@ if args.tflite and args.edgetpu:
     sys.exit(1)
 detector_args['edgetpu'] = args.edgetpu
 detector_args['tflite'] = args.tflite
-
+detector_args['info'] = args.info
 if args.model is None:
     model = os.path.join('models', "ssd_mobilenet_v2_coco_2018_03_29")
     print("Using default model ssd_mobilenet_v2_coco_2018_03_29.")
 else:
-    model = os.path.join('models', args.model)
-if (not os.path.exists(model)) or (not os.path.isdir(model)):
-    print(f"The path {model} does not exist or is not a directory. You can download models from the TF1 detection model zoo: \n\
+    model_dir = os.path.join('models', args.model)
+if (not os.path.exists(model_dir)) or (not os.path.isdir(model_dir)):
+    print(f"The path {model_dir} does not exist or is not a directory. You can download models from the TF1 detection model zoo: \n\
         https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md and place in the models subdirectory of TrafficCV.")
     sys.exit(1)
 
-if model.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and not detector_args['tflite'] and not detector_args['edgetpu']:
+if model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and not detector_args['tflite'] and not detector_args['edgetpu']:
     print("Using TensorFlow SSD MobileNetv1 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet
-    ssd_mobilenet.run(model, video, detector_args)
-elif model.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['tflite']:
+    ssd_mobilenet.run(model_dir, video, detector_args)
+elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['tflite']:
     print("Using TensorFlow Lite SSD MobileNetv1 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet_tflite
-    ssd_mobilenet_tflite.run(model, video, detector_args)
-elif model.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['edgetpu']:
+    ssd_mobilenet_tflite.run(model_dir, video, detector_args)
+elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['edgetpu']:
     print("Using TensorFlow Lite on Edge TPU SSD MobileNetv1 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet_edgetpu
-    ssd_mobilenet_edgetpu.run(model, video, detector_args)
-elif model.startswith(os.path.join('models', 'ssd_mobilenet_v2_coco')):
+    ssd_mobilenet_edgetpu.run(model_dir, video, detector_args)
+elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v2_coco')):
     print("Using TensorFlow SSD MobileNetv2 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet
-    ssd_mobilenet.run(model, video, detector_args)
-elif model.startswith(os.path.join('models', 'yolov3')):
+    ssd_mobilenet.run(model_dir, video, detector_args)
+elif model_dir.startswith(os.path.join('models', 'yolov3')):
     print("Using TensorFlow YOLOv3 for COCO. Press q in video window to quit.")
     from detectors import yolov3
-    yolov3.run(model, video)
-elif model.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
+    yolov3.run(model_dir, video)
+elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
     print("Using Caffe SSD MobileNetv1 for COCO. Press q in video window to quit.")
     from detectors import ssd_mobilenet_caffe
     ssd_mobilenet_caffe.run(video)
-elif model.startswith(os.path.join('models', 'haarcascade')):
+elif model_dir.startswith(os.path.join('models', 'haarcascade')):
     print("Using Haar cascade classifier. Press q in video window to quit.")
     from detectors import haarcascade_kraten
-    haarcascade_kraten.run(model, video, detector_args)
+    haarcascade_kraten.run(model_dir, video, detector_args)

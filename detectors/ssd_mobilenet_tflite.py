@@ -5,11 +5,9 @@
 # --- Mail           : ahmetozlu93@gmail.com
 # --- Date           : 27th January 2018
 # ----------------------------------------------
-import os
-
+import os, sys
 import numpy as np
 import tensorflow as tf
-import platform
 import cv2
 
 from utils import label_map_util
@@ -26,20 +24,14 @@ def load_image_into_numpy_array(image):
 
 def run(model, video, args):
     """Run detector and classifier."""
-
-    model_file = os.path.join(model, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')
+    model_file = os.path.join(model, 'ssd_mobilenet_v1_coco_quant_postprocess.tflite')
     labels = os.path.join('data', 'mscoco_label_map.pbtxt')
     num_classes = 90
-
+    interpreter = make_interpreter(model_file)
     cap = cv2.VideoCapture(video)
-
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-        od_graph_def = tf.compat.v1.GraphDef()
-        with tf.gfile.GFile(model_file, 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
+    if args['info']:
+        print(interpreter.get_input_details())
+        sys.exit(0)
 
     # Loading label map
     # Label maps map indices to category names, so that when our convolution network predicts 5, we know that this corresponds to airplane. Here I use internal utility functions, but anything that returns a dictionary mapping integers to appropriate string labels would be fine

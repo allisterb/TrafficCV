@@ -5,10 +5,11 @@
 # --- Mail           : ahmetozlu93@gmail.com
 # --- Date           : 27th January 2018
 # ----------------------------------------------
-import os
+import os, sys
 
 import numpy as np
-import tflite_runtime
+import tflite_runtime.interpreter as tflite
+import tensorflow as tf
 import platform
 import cv2
 
@@ -23,7 +24,7 @@ EDGETPU_SHARED_LIB = {
 
 def make_interpreter(model_file):
   model_file, *device = model_file.split('@')
-  return tf.lite.Interpreter(
+  return tflite.Interpreter(
       model_path=model_file,
       experimental_delegates=[
           tflite.load_delegate(EDGETPU_SHARED_LIB,
@@ -38,12 +39,14 @@ def load_image_into_numpy_array(image):
 
 def run(model, video, args):
     """Run detector and classifier."""
-
     model_file = os.path.join(model, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')
     labels = os.path.join('data', 'mscoco_label_map.pbtxt')
     num_classes = 90
-
+    interpreter = make_interpreter(model_file)
     cap = cv2.VideoCapture(video)
+    if args['info']:
+        print(interpreter.get_input_details())
+        sys.exit(0)
 
     detection_graph = tf.Graph()
     with detection_graph.as_default():
