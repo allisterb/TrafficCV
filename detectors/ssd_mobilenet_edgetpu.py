@@ -1,23 +1,18 @@
-# Based on https://github.com/ahmetozlu/vehicle_counting_tensorflow/blob/master/vehicle_detection_main.py
-# vehicle_detection_main.py is Copyright (c) 2018 Ahmet Özlü
-# ----------------------------------------------
-# --- Author         : Ahmet Ozlu
-# --- Mail           : ahmetozlu93@gmail.com
-# --- Date           : 27th January 2018
-# ----------------------------------------------
-import os, sys
+# Based on https://github.com/kraten/vehicle-speed-check/blob/master/speed_check.py 
+# by Kartike Bansal.
 
-import numpy as np
-import tflite_runtime.interpreter as tflite
-import tflite_detect
-import tensorflow as tf
+import os
+import sys
 import platform
-import cv2
-from PIL import Image
-from PIL import ImageDraw
+import time
+import math
+import logging
 
-from utils import label_map_util
-from utils import visualization_utils as vis_util
+import cv2
+import dlib
+import tflite_runtime.interpreter as tflite
+from PIL import Image
+import tflite_detect
 
 EDGETPU_SHARED_LIB = {
   'Linux': 'libedgetpu.so.1',
@@ -34,176 +29,138 @@ def make_interpreter(model_file):
                                {'device': device[0]} if device else {})
       ])
 
-def load_image_into_numpy_array(image):
-    """Load image into Numpy array"""
-    (im_width, im_height) = image.sizse
-    return np.array(image.getdata()).reshape((im_height, im_width,
-            3)).astype(np.uint8)
+def estimate_speed(ppm, fps, location1, location2):
+    """Estimate the speed of a vehicle assuming pixel-per-metre and fps constants."""
+    d_pixels = math.sqrt(math.pow(location2[0] - location1[0], 2) + math.pow(location2[1] - location1[1], 2))
+    d_meters = d_pixels / ppm
+    speed = d_meters * fps * 3.6
+    return speed
 
-def run(model, video, args):
-    """Run detector and classifier."""
-    model_file = os.path.join(model, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')
+def run(model_dir, video_source, args):
+    """Run the classifier and detector."""
+    info = logging.info
+    error = logging.error
+    warn = logging.warn
+    debug = logging.debug
+    model_file = os.path.join(model_dir, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')
     labels = os.path.join('data', 'mscoco_label_map.pbtxt')
     num_classes = 90
     interpreter = make_interpreter(model_file)
-    image = Image.open(args.input)
-    scale = detect.set_input(interpreter, image.size,
-                           lambda size: image.resize(size, Image.ANTIALIAS))
-    cap = cv2.VideoCapture(video)
+    cap = cv2.VideoCapture(video_source)
     if args['info']:
-        print(interpreter.get_input_details())
+        info(f'Model input: {interpreter.get_input_details()}')
+        height, width, fps = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FPS)) 
+        bitrate, pixelfmt = cap.get(cv2.CAP_PROP_BITRATE), cap.get(cv2.CAP_PROP_CODEC_PIXEL_FORMAT)
+        info(f'Video source info: {width}x{height} {fps}fps. {bitrate}bps {int(pixelfmt)} pixel format.')
         sys.exit(0)
-
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-        od_graph_def = tf.compat.v1.GraphDef()
-        with tf.gfile.GFile(model_file, 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
-
-    # Loading label map
-    # Label maps map indices to category names, so that when our convolution network predicts 5, we know that this corresponds to airplane. Here I use internal utility functions, but anything that returns a dictionary mapping integers to appropriate string labels would be fine
-    label_map = label_map_util.load_labelmap(labels)
-    categories = label_map_util.convert_label_map_to_categories(label_map,
-            max_num_classes=num_classes, use_display_name=True)
-    category_index = label_map_util.create_category_index(categories)
-
-    total_passed_vehicle = 0
-    speed = 'waiting...'
-    direction = 'waiting...'
-    size = 'waiting...'
-    color = 'waiting...'
-    with detection_graph.as_default():
-        with tf.compat.v1.Session(graph=detection_graph) as sess:
-
-            # Definite input and output Tensors for detection_graph
-            image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
-
-            # Each box represents a part of the image where a particular object was detected.
-            detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
-
-            # Each score represent how level of confidence for each of the objects.
-            # Score is shown on the result image, together with the class label.
-            detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
-            detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
-            num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-
-            # for all the frames that are extracted from input video
-            while cap.isOpened():
-                (ret, frame) = cap.read()
-                if not ret:
-                    print ('End of the video file. Stopping.')
-                    break
-                input_frame = frame
+    interpreter.allocate_tensors()
+    video = cv2.VideoCapture(video_source)
+    ppm = 8.8
+    if 'ppm' in args:
+        ppm = args['ppm']
+    else:
+        info ('ppm argument not specified. Using default value 8.8.')
+    fps = 18
+    if 'fps' in args:
+        fps = args['fps']
+    else:
+        info ('fps argument not specified. Using default value 18.')
+    fc = 10
+    if 'fc' in args:
+        fc = args['fc']
+    else:
+        info ('fc argument not specified. Using default value 10.')
+    RECT_COLOR = (0, 255, 0)
+    frame_counter = 0
+    fps = 0
+    current_car_id = 0
+    car_tracker = {}
+    car_location_1 = {} # Previous car location
+    car_location_2 = {} # Current car location
+    speed = [None] * 1000
+    
+    while True:
+        start_time = time.time()
+        _, frame = video.read()
+        if frame is None:
+            break
+        result = frame.copy()
+        frame_counter += 1 
+        car_ids_to_delete = []
+        for car_id in car_tracker.keys():
+            tracking_quality = car_tracker[car_id].update(frame)
+            if tracking_quality < 7:
+                car_ids_to_delete.append(car_id)
+        for car_id in car_ids_to_delete:
+            debug(f'Removing car id {car_id} + from list of tracked cars.')
+            car_tracker.pop(car_id, None)
+            car_location_1.pop(car_id, None)
+            car_location_2.pop(car_id, None)
+        
+        if not (frame_counter % fc):
+            image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            input = tflite_detect.set_input(interpreter, image.size,
+                           lambda size: image.resize(size, Image.ANTIALIAS))
+            interpreter.invoke()
+            cars = tflite_detect.get_output(interpreter, 0.5, input)
+            #cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))        
+            for c in cars:
+                x = int(c.bbox.xmin)
+                y = int(c.bbox.ymin)
+                w = int(c.bbox.xmax)
+                h = int(c.bbox.ymax)
+                x_bar = x + 0.5 * w
+                y_bar = y + 0.5 * h
                 
-                # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
-                image_np_expanded = np.expand_dims(input_frame, axis=0)
+                matched_car_id = None
+                for car_id in car_tracker.keys():
+                    tracked_position = car_tracker[car_id].get_position()
+                    t_x = int(tracked_position.left())
+                    t_y = int(tracked_position.top())
+                    t_w = int(tracked_position.width())
+                    t_h = int(tracked_position.height())
+                    
+                    t_x_bar = t_x + 0.5 * t_w
+                    t_y_bar = t_y + 0.5 * t_h
+                
+                    if ((t_x <= x_bar <= (t_x + t_w)) and (t_y <= y_bar <= (t_y + t_h)) and (x <= t_x_bar <= (x + w)) and (y <= t_y_bar <= (y + h))):
+                        matched_car_id = car_id
+                
+                if matched_car_id is None:
+                    debug (f'Creating new car tracker with id {current_car_id}.' )
+                    tracker = dlib.correlation_tracker()
+                    tracker.start_track(image, dlib.rectangle(x, y, x + w, y + h))
+                    car_tracker[current_car_id] = tracker
+                    car_location_1[current_car_id] = [x, y, w, h]
+                    current_car_id += 1
+        
+        for car_id in car_tracker.keys():
+            tracked_position = car_tracker[car_id].get_position()
+            t_x = int(tracked_position.left())
+            t_y = int(tracked_position.top())
+            t_w = int(tracked_position.width())
+            t_h = int(tracked_position.height())
+            cv2.rectangle(result, (t_x, t_y), (t_x + t_w, t_y + t_h), RECT_COLOR, 4)
+            car_location_2[car_id] = [t_x, t_y, t_w, t_h]
+        
+        end_time = time.time()
+        if not (end_time == start_time):
+            fps = 1.0/(end_time - start_time)
+        cv2.putText(result, 'FPS: ' + str(int(fps)), (620, 30),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
-                # Actual detection.
-                (boxes, scores, classes, num) = \
-                    sess.run([detection_boxes, detection_scores,
-                             detection_classes, num_detections],
-                             feed_dict={image_tensor: image_np_expanded})
+        for i in car_location_1.keys():	
+            if frame_counter % 1 == 0:
+                [x1, y1, w1, h1] = car_location_1[i]
+                [x2, y2, w2, h2] = car_location_2[i]
+                car_location_1[i] = [x2, y2, w2, h2]
+                if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
+                    # Estimate speed for a car object as it passes through a ROI.
+                    if (speed[i] is None) and y1 >= 275 and y1 <= 285:
+                        speed[i] = estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
+                    if speed[i] is not None and y1 >= 180:
+                        cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
 
-                # Visualization of the results of a detection.
-                (counter, csv_line) = \
-                    vis_util.visualize_boxes_and_labels_on_image_array(
-                    cap.get(1),
-                    input_frame,
-                    np.squeeze(boxes),
-                    np.squeeze(classes).astype(np.int32),
-                    np.squeeze(scores),
-                    category_index,
-                    use_normalized_coordinates=True,
-                    line_thickness=4,
-                    )
-
-                total_passed_vehicle = total_passed_vehicle + counter
-
-                # insert information text to video frame
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(
-                    input_frame,
-                    'Detected Vehicles: ' + str(total_passed_vehicle),
-                    (10, 35),
-                    font,
-                    0.8,
-                    (0, 0xFF, 0xFF),
-                    2,
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    )
-
-                # when the vehicle passed over line and counted, make the color of ROI line green
-                if counter == 1:
-                    cv2.line(input_frame, (0, 200), (640, 200), (0, 0xFF, 0), 5)
-                else:
-                    cv2.line(input_frame, (0, 200), (640, 200), (0, 0, 0xFF), 5)
-
-                # insert information text to video frame
-                cv2.rectangle(input_frame, (10, 275), (230, 337), (180, 132, 109), -1)
-                cv2.putText(
-                    input_frame,
-                    'ROI Line',
-                    (545, 190),
-                    font,
-                    0.6,
-                    (0, 0, 0xFF),
-                    2,
-                    cv2.LINE_AA,
-                    )
-                cv2.putText(
-                    input_frame,
-                    'LAST PASSED VEHICLE INFO',
-                    (11, 290),
-                    font,
-                    0.5,
-                    (0xFF, 0xFF, 0xFF),
-                    1,
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    )
-                cv2.putText(
-                    input_frame,
-                    '-Movement Direction: ' + direction,
-                    (14, 302),
-                    font,
-                    0.4,
-                    (0xFF, 0xFF, 0xFF),
-                    1,
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                    )
-                cv2.putText(
-                    input_frame,
-                    '-Speed(km/h): ' + speed,
-                    (14, 312),
-                    font,
-                    0.4,
-                    (0xFF, 0xFF, 0xFF),
-                    1,
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                    )
-                cv2.putText(
-                    input_frame,
-                    '-Color: ' + color,
-                    (14, 322),
-                    font,
-                    0.4,
-                    (0xFF, 0xFF, 0xFF),
-                    1,
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                    )
-                cv2.putText(
-                    input_frame,
-                    '-Vehicle Size/Type: ' + size,
-                    (14, 332),
-                    font,
-                    0.4,
-                    (0xFF, 0xFF, 0xFF),
-                    1,
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                    )
-                cv2.imshow('OpenCV SSD MobileNet', input_frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            cap.release()
-            cv2.destroyAllWindows()
+        cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
