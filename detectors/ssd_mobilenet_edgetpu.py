@@ -107,8 +107,8 @@ def run(model_dir, video_source, args):
             for c in cars:
                 x = int(c.bbox.xmin)
                 y = int(c.bbox.ymin)
-                w = int(c.bbox.xmax)
-                h = int(c.bbox.ymax)
+                w = int(c.bbox.xmax - c.bbox.xmin)
+                h = int(c.bbox.ymax - c.bbox.ymin)
                 x_bar = x + 0.5 * w
                 y_bar = y + 0.5 * h
                 
@@ -129,7 +129,7 @@ def run(model_dir, video_source, args):
                 if matched_car_id is None:
                     debug (f'Creating new car tracker with id {current_car_id}.' )
                     tracker = dlib.correlation_tracker()
-                    tracker.start_track(image, dlib.rectangle(x, y, x + w, y + h))
+                    tracker.start_track(result, dlib.rectangle(x, y, x + w, y + h))
                     car_tracker[current_car_id] = tracker
                     car_location_1[current_car_id] = [x, y, w, h]
                     current_car_id += 1

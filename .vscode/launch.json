@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "cli.py",
-            "args": [ "--model", "ssd_mobilenet_v1_coco_2018_01_28", "--video", "demo_videos\\cars_horizontal.mp4", "--edgetpu"],
+            "args": [ "--model", "ssd_mobilenet_v1_coco_2018_01_28", "--video", "demo_videos/cars_horizontal.mp4", "--edgetpu"],
             "console": "integratedTerminal"
         }
     ]
