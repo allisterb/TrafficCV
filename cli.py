@@ -6,9 +6,16 @@ import argparse
 import warnings
 import logging
 from pyfiglet import Figlet
-
+import getch
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+KBINPUT = False
+
+def kb_capture_thread():
+    global KBINPUT
+    getch.getch()
+    KBINPUT = True
 
 def print_logo():
     """Print program logo."""
@@ -26,6 +33,7 @@ parser.add_argument("--video", help="Path to a video file to use as input.",
 parser.add_argument("--args", help="Arguments to pass to the specified model and detector comma-delimited as key=value e.g --args \'ppm=4,fps=1\'")
 parser.add_argument("--tflite", help="Execute a TFLite version of the model.", action="store_true", default=False)
 parser.add_argument("--edgetpu", help="Execute a TFLite version of the model on an Edge TPU device like the Coral USB accelerator.", action="store_true", default=False)
+parser.add_argument("--nowindow", help="Don't display the video in a win.",  action="store_true", default=False)
 parser.add_argument("--info", help="Print out info on the model only.",  action="store_true", default=False)
 args = parser.parse_args()
 
@@ -79,6 +87,7 @@ if args.tflite and args.edgetpu:
 detector_args['edgetpu'] = args.edgetpu
 detector_args['tflite'] = args.tflite
 detector_args['info'] = args.info
+detector_args['nowindow'] = args.nowindow
 if args.model is None:
     model = os.path.join('models', "ssd_mobilenet_v2_coco_2018_03_29")
     print("Using default model ssd_mobilenet_v2_coco_2018_03_29.")

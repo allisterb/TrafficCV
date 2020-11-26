@@ -4,6 +4,7 @@
 import os
 import sys
 import platform
+import threading
 import time
 import math
 import logging
@@ -12,6 +13,7 @@ import cv2
 import dlib
 import tflite_runtime.interpreter as tflite
 from PIL import Image
+import kbinput
 import tflite_detect
 
 EDGETPU_SHARED_LIB = {
@@ -78,8 +80,8 @@ def run(model_dir, video_source, args):
     car_location_1 = {} # Previous car location
     car_location_2 = {} # Current car location
     speed = [None] * 1000
-    
-    while True:
+    threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thread', daemon=True).start()
+    while not kbinput.KBINPUT:
         start_time = time.time()
         _, frame = video.read()
         if frame is None:
@@ -99,10 +101,10 @@ def run(model_dir, video_source, args):
         
         if not (frame_counter % fc):
             image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            input = tflite_detect.set_input(interpreter, image.size,
+            input_tensor = tflite_detect.set_input(interpreter, image.size,
                            lambda size: image.resize(size, Image.ANTIALIAS))
             interpreter.invoke()
-            cars = tflite_detect.get_output(interpreter, 0.5, input)
+            cars = tflite_detect.get_output(interpreter, 0.5, input_tensor)
             #cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))        
             for c in cars:
                 x = int(c.bbox.xmin)
@@ -160,7 +162,9 @@ def run(model_dir, video_source, args):
                     if speed[i] is not None and y1 >= 180:
                         cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
 
-        cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
+        if not args['nowindow']:
+            cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
+        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
