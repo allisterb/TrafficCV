@@ -4,7 +4,6 @@
 import os
 import sys
 import platform
-import threading
 import time
 import math
 import logging
@@ -22,14 +21,35 @@ EDGETPU_SHARED_LIB = {
   'Windows': 'edgetpu.dll'
 }[platform.system()]
 
+def load_labels(path, encoding='utf-8'):
+  """Loads labels from file (with or without index numbers).
+
+  Args:
+    path: path to label file.
+    encoding: label file encoding.
+  Returns:
+    Dictionary mapping indices to labels.
+  """
+  with open(path, 'r', encoding=encoding) as f:
+    lines = f.readlines()
+    if not lines:
+      return {}
+
+    if lines[0].split(' ', maxsplit=1)[0].isdigit():
+      pairs = [line.split(' ', maxsplit=1) for line in lines]
+      return {int(index): label.strip() for index, label in pairs}
+    else:
+      return {index: line.strip() for index, line in enumerate(lines)}
+
 def make_interpreter(model_file):
-  model_file, *device = model_file.split('@')
-  return tflite.Interpreter(
-      model_path=model_file,
-      experimental_delegates=[
-          tflite.load_delegate(EDGETPU_SHARED_LIB,
-                               {'device': device[0]} if device else {})
-      ])
+    """Create TensorFlow Lite interpreter for Edge TPU."""
+    model_file, *device = model_file.split('@')
+    return tflite.Interpreter(
+        model_path=model_file,
+        experimental_delegates=[
+            tflite.load_delegate(EDGETPU_SHARED_LIB,
+                                 {'device': device[0]} if device else {})
+        ])
 
 def estimate_speed(ppm, fps, location1, location2):
     """Estimate the speed of a vehicle assuming pixel-per-metre and fps constants."""
@@ -40,21 +60,32 @@ def estimate_speed(ppm, fps, location1, location2):
 
 def run(model_dir, video_source, args):
     """Run the classifier and detector."""
+    
     info = logging.info
     error = logging.error
     warn = logging.warn
     debug = logging.debug
-    model_file = os.path.join(model_dir, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')
-    labels = os.path.join('data', 'mscoco_label_map.pbtxt')
-    num_classes = 90
+    
+    model_file = os.path.join(model_dir, 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite')        
+    labels_file = os.path.join('labels', 'coco_labels.txt')
+    if not os.path.exists(model_file):
+        error(f'The TF Lite model file {model_file} does not exist.')
+        sys.exit(1)
+    if not os.path.exists(labels_file):
+        error(f'The TF Lite labels file {labels_file} does not exist.')
+        sys.exit(1)
+    labels = load_labels(labels_file)
     interpreter = make_interpreter(model_file)
     cap = cv2.VideoCapture(video_source)
     if args['info']:
         info(f'Model input: {interpreter.get_input_details()}')
+        info(f'Model output: {interpreter.get_output_details()}')
         height, width, fps = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FPS)) 
         bitrate, pixelfmt = cap.get(cv2.CAP_PROP_BITRATE), cap.get(cv2.CAP_PROP_CODEC_PIXEL_FORMAT)
         info(f'Video source info: {width}x{height} {fps}fps. {bitrate}bps {int(pixelfmt)} pixel format.')
+        info(f'Labels: {labels}')
         sys.exit(0)
+    nowindow = args['nowindow']
     interpreter.allocate_tensors()
     video = cv2.VideoCapture(video_source)
     ppm = 8.8
@@ -80,8 +111,7 @@ def run(model_dir, video_source, args):
     car_location_1 = {} # Previous car location
     car_location_2 = {} # Current car location
     speed = [None] * 1000
-    threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thread', daemon=True).start()
-    while not kbinput.KBINPUT:
+    while not kbinput.KBINPUT: 
         start_time = time.time()
         _, frame = video.read()
         if frame is None:
@@ -104,16 +134,16 @@ def run(model_dir, video_source, args):
             input_tensor = tflite_detect.set_input(interpreter, image.size,
                            lambda size: image.resize(size, Image.ANTIALIAS))
             interpreter.invoke()
-            cars = tflite_detect.get_output(interpreter, 0.5, input_tensor)
+            cars = tflite_detect.get_output(interpreter, 0.6 , input_tensor)
             #cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))        
             for c in cars:
+                info('Object detected: %s (%.2f).' % (labels.get(c.id, c.id), c.score))
                 x = int(c.bbox.xmin)
                 y = int(c.bbox.ymin)
                 w = int(c.bbox.xmax - c.bbox.xmin)
                 h = int(c.bbox.ymax - c.bbox.ymin)
                 x_bar = x + 0.5 * w
-                y_bar = y + 0.5 * h
-                
+                y_bar = y + 0.5 * h 
                 matched_car_id = None
                 for car_id in car_tracker.keys():
                     tracked_position = car_tracker[car_id].get_position()
@@ -164,7 +194,6 @@ def run(model_dir, video_source, args):
 
         if not args['nowindow']:
             cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
-        
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
     cv2.destroyAllWindows()

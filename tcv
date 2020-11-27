@@ -4,5 +4,7 @@ if [[ $display != *:* ]] &&  [[ "$*" != *--nowindow* ]]; then
     echo 'You must specify an X display to run on e.g. tcv $DISPLAY or use the --nowindow argument.'
     exit 1
 fi
-shift
+if [[ $display == *:* ]]; then
+    shift
+fi
 TF_CPP_MIN_LOG_LEVEL=1 DISPLAY=$display python cli.py $*

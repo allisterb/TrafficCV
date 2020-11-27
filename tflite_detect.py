@@ -160,4 +160,4 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
                   xmax=xmax,
                   ymax=ymax).scale(sx, sy).map(int))
 
-  return [make(i) for i in range(count) if scores[i] >= score_threshold]
+  return [make(i) for i in range(count)] #if scores[i] >= score_threshold

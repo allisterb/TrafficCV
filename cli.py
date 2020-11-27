@@ -2,20 +2,18 @@
 
 import os
 import sys
+import threading
 import argparse
 import warnings
 import logging
 from pyfiglet import Figlet
-import getch
+
+import kbinput
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 KBINPUT = False
-
-def kb_capture_thread():
-    global KBINPUT
-    getch.getch()
-    KBINPUT = True
 
 def print_logo():
     """Print program logo."""
@@ -38,15 +36,21 @@ parser.add_argument("--info", help="Print out info on the model only.",  action=
 args = parser.parse_args()
 
 if args.debug:
-    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%I:%M:%S %p', level=logging.DEBUG)
     logging.info("Debug mode enabled.")
 else:
-    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%I:%M:%S %p', level=logging.INFO)
 info = logging.info
 error = logging.error
 warn = logging.warn
 debug = logging.debug
 print_logo()
+
+if args.nowindow:
+    info('Video window disabled. Press ENTER key twice to stop.')
+    threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thread', daemon=True).start()
+else:
+    info('Video window enabled. Press ENTER key twice or press q in the video window to stop.')
 
 if args.test:
     import cv2 as cv
@@ -99,27 +103,27 @@ if (not os.path.exists(model_dir)) or (not os.path.isdir(model_dir)):
     sys.exit(1)
 
 if model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and not detector_args['tflite'] and not detector_args['edgetpu']:
-    print("Using TensorFlow SSD MobileNetv1 for COCO. Press q in video window to quit.")
+    info("Using TensorFlow SSD MobileNetv1 for COCO.")
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model_dir, video, detector_args)
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['tflite']:
-    print("Using TensorFlow Lite SSD MobileNetv1 for COCO. Press q in video window to quit.")
+    info("Using TensorFlow Lite SSD MobileNetv1 for COCO.")
     from detectors import ssd_mobilenet_tflite
     ssd_mobilenet_tflite.run(model_dir, video, detector_args)
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['edgetpu']:
-    print("Using TensorFlow Lite on Edge TPU SSD MobileNetv1 for COCO. Press q in video window to quit.")
+    info("Using TensorFlow Lite on Edge TPU SSD MobileNetv1 for COCO.")
     from detectors import ssd_mobilenet_edgetpu
     ssd_mobilenet_edgetpu.run(model_dir, video, detector_args)
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v2_coco')):
-    print("Using TensorFlow SSD MobileNetv2 for COCO. Press q in video window to quit.")
+    info("Using TensorFlow SSD MobileNetv2 for COCO.")
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model_dir, video, detector_args)
 elif model_dir.startswith(os.path.join('models', 'yolov3')):
-    print("Using TensorFlow YOLOv3 for COCO. Press q in video window to quit.")
+    info("Using TensorFlow YOLOv3 for COCO.")
     from detectors import yolov3
     yolov3.run(model_dir, video)
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_caffe')):
-    print("Using Caffe SSD MobileNetv1 for COCO. Press q in video window to quit.")
+    info("Using Caffe SSD MobileNetv1 for COCO.")
     from detectors import ssd_mobilenet_caffe
     ssd_mobilenet_caffe.run(video)
 elif model_dir.startswith(os.path.join('models', 'haarcascade')):

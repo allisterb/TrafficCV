@@ -1,7 +1,8 @@
-import getch
 KBINPUT = False
 
 def kb_capture_thread():
+    """Capture a keyboard input."""
     global KBINPUT
-    getch.getch()
+    input()
+    #_ = getch.getch()
     KBINPUT = True
