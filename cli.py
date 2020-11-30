@@ -6,6 +6,7 @@ import threading
 import argparse
 import warnings
 import logging
+from logging import info, error, warning, debug
 from pyfiglet import Figlet
 
 import kbinput
@@ -37,20 +38,20 @@ args = parser.parse_args()
 
 if args.debug:
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%I:%M:%S %p', level=logging.DEBUG)
-    logging.info("Debug mode enabled.")
+    info("Debug mode enabled.")
 else:
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%I:%M:%S %p', level=logging.INFO)
-info = logging.info
-error = logging.error
-warn = logging.warn
-debug = logging.debug
-print_logo()
+#info = logging.info
+#error = logging.error
+#warn = logging.warn
+#debug = logging.debug
 
+print_logo()
+threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thread', daemon=True).start()
 if args.nowindow:
-    info('Video window disabled. Press ENTER key twice to stop.')
-    threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thread', daemon=True).start()
+    info('Video window disabled. Press ENTER key to stop.')
 else:
-    info('Video window enabled. Press ENTER key twice or press q in the video window to stop.')
+    info('Video window enabled. Press ENTER key or press q in the video window to stop.')
 
 if args.test:
     import cv2 as cv
@@ -80,7 +81,7 @@ if args.args is not None:
     for a in args.args.split(','):
         kv = a.split('=')
         if len(kv) != 2:
-            error(f'The detector argument {kv} is malformed.')
+            #error(f'The detector argument {kv} is malformed.')
             sys.exit(1)
         k, v = kv[0], kv[1]
         detector_args[k] = v
