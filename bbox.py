@@ -28,11 +28,11 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
 
     @property
     def valid(self):
-    """Returns whether bounding box is valid or not.
+        """Returns whether bounding box is valid or not.
 
-    Valid bounding box has xmin <= xmax and ymin <= ymax which is equivalent to
-    width >= 0 and height >= 0.
-    """
+        Valid bounding box has xmin <= xmax and ymin <= ymax which is equivalent to
+        width >= 0 and height >= 0.
+        """
         return self.width >= 0 and self.height >= 0
 
     def scale(self, sx, sy):
@@ -50,7 +50,7 @@ class BBox(collections.namedtuple('BBox', ['xmin', 'ymin', 'xmax', 'ymax'])):
                 ymax=dy + self.ymax)
 
     def map(self, f):
-    """Returns bounding box modified by applying f for each coordinate."""
+        """Returns bounding box modified by applying f for each coordinate."""
         return BBox(xmin=f(self.xmin),
                 ymin=f(self.ymin),
                 xmax=f(self.xmax),

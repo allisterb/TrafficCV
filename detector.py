@@ -17,7 +17,7 @@ class Detector(abc.ABC):
         """Get the string label for an integer index."""
 
     @abc.abstractmethod
-    def detect_objects(self, video_frame):
+    def detect_objects(self, frame):
         """Detect objects in a video frame."""
 
     @abc.abstractmethod

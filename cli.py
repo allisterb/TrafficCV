@@ -41,13 +41,10 @@ if args.debug:
     info("Debug mode enabled.")
 else:
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%I:%M:%S %p', level=logging.INFO)
-#info = logging.info
-#error = logging.error
-#warn = logging.warn
-#debug = logging.debug
 
 print_logo()
 threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thread', daemon=True).start()
+
 if args.nowindow:
     info('Video window disabled. Press ENTER key to stop.')
 else:
@@ -108,13 +105,14 @@ if model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and not
     from detectors import ssd_mobilenet
     ssd_mobilenet.run(model_dir, video, detector_args)
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['tflite']:
-    info("Using TensorFlow Lite SSD MobileNetv1 for COCO.")
-    from detectors import ssd_mobilenet_tflite
-    ssd_mobilenet_tflite.run(model_dir, video, detector_args)
+    from detectors import ssd_mobilenet_tflite_d
+    ssd_mobilenet_tflite_d.Detector(model_dir, video, detector_args).run()
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['edgetpu']:
     info("Using TensorFlow Lite on Edge TPU SSD MobileNetv1 for COCO.")
-    from detectors import ssd_mobilenet_edgetpu
-    ssd_mobilenet_edgetpu.run(model_dir, video, detector_args)
+    # from detectors import ssd_mobilenet_edgetpu
+    # ssd_mobilenet_edgetpu.run(model_dir, video, detector_args)
+    from detectors import ssd_mobilenet_d
+    ssd_mobilenet_d.Detector(model_dir, video, detector_args).run()
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v2_coco')):
     info("Using TensorFlow SSD MobileNetv2 for COCO.")
     from detectors import ssd_mobilenet
