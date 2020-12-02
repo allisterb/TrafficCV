@@ -27,7 +27,6 @@ def input_tensor(interpreter):
   tensor_index = interpreter.get_input_details()[0]['index']
   return interpreter.tensor(tensor_index)()[0]
 
-
 def set_input(interpreter, size, resize):
   """Copies a resized and properly zero-padded image to the input tensor.
 
@@ -75,7 +74,7 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
                   xmax=xmax,
                   ymax=ymax).scale(sx, sy).map(int))
 
-  return [make(i) for i in range(count)] #if scores[i] >= score_threshold
+  return [make(i) for i in range(count) if scores[i] >= score_threshold] #if scores[i] >= score_threshold
 
 def load_labels(path, encoding='utf-8'):
     """Loads labels from file (with or without index numbers).
@@ -124,10 +123,10 @@ class Detector(detector.Detector):
 
     def detect_objects(self, frame):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        input_tensor = set_input(self.interpreter, image.size,
+        t = set_input(self.interpreter, image.size,
                     lambda size: image.resize(size, Image.ANTIALIAS))
         self.interpreter.invoke()
-        return get_output(self.interpreter, 0.6 , input_tensor)
+        return get_output(self.interpreter, 0.6 , t)
 
     def get_label_for_index(self, idx):
         self.labels.get(idx, idx)

@@ -6,6 +6,7 @@ from logging import info, error, warn, debug
 
 import numpy as np
 import cv2
+from imutils.video import FPS
 import dlib
 import kbinput
 
@@ -29,6 +30,8 @@ class Detector(abc.ABC):
         self.model_dir = model_dir
         self.video_source = video_source
         self.video = cv2.VideoCapture(self.video_source)
+        self._height, self._width, self._fps = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FPS)) 
+        info(f'Video resolution: {self._width}x{self._height} {self._fps}fps.')
         self.args = args
 
     def estimate_speed(self, ppm, fps, location1, location2):
@@ -44,38 +47,32 @@ class Detector(abc.ABC):
         if self.args['info']:
             self.print_model_info()
             sys.exit(0)
-        
         nowindow = self.args['nowindow']
         ppm = 8.8
         if 'ppm' in self.args:
             ppm = self.args['ppm']
         else:
             info ('ppm argument not specified. Using default value 8.8.')
-        fps = 18
-        if 'fps' in self.args:
-            fps = self.args['fps']
-        else:
-            info ('fps argument not specified. Using default value 18.')
         fc = 10
         if 'fc' in self.args:
             fc = self.args['fc']
         else:
             info ('fc argument not specified. Using default value 10.')
         RECT_COLOR = (0, 255, 0)
-        frame_counter = 0
-        fps = 0
+        frame_counter = 0.0
+        fps = 0.0
         current_car_id = 0
         car_tracker = {}
         car_location_1 = {} # Previous car location
         car_location_2 = {} # Current car location
         speed = [None] * 1000
-        while not kbinput.KBINPUT: 
-            start_time = time.time()
+        start_time = time.time()
+        while not kbinput.KBINPUT:
             _, frame = self.video.read()
             if frame is None:
                 break
             result = frame.copy()
-            frame_counter += 1 
+            frame_counter += 1.0 
             car_ids_to_delete = []
             for car_id in car_tracker.keys():
                 psr = car_tracker[car_id].update(frame)
@@ -133,27 +130,26 @@ class Detector(abc.ABC):
                 t_h = int(tracked_position.height())
                 cv2.rectangle(result, (t_x, t_y), (t_x + t_w, t_y + t_h), RECT_COLOR, 4)
                 car_location_2[car_id] = [t_x, t_y, t_w, t_h]
-            
+                
             end_time = time.time()
-            if not (end_time == start_time):
-                fps = 1.0/(end_time - start_time)
-            cv2.putText(result, 'FPS: ' + str(int(fps)), (620, 30),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
-
-            for i in car_location_1.keys():	
-                if frame_counter % 1 == 0:
-                    [x1, y1, w1, h1] = car_location_1[i]
-                    [x2, y2, w2, h2] = car_location_2[i]
-                    car_location_1[i] = [x2, y2, w2, h2]
-                    if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
-                        # Estimate speed for a car object as it passes through a ROI.
-                        if (speed[i] is None) and y1 >= 275 and y1 <= 285:
-                            speed[i] = self.estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
-                        if speed[i] is not None and y1 >= 180:
-                            cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
-
+            fps = frame_counter / (end_time - start_time)
+            for i in car_location_1.keys():	                
+                [x1, y1, w1, h1] = car_location_1[i]
+                [x2, y2, w2, h2] = car_location_2[i]
+                car_location_1[i] = [x2, y2, w2, h2]
+                if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
+                    # Estimate speed for a car object as it passes through a ROI.
+                    if (speed[i] is None) and y1 >= 275 and y1 <= 285:
+                        speed[i] = self.estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
+                    if speed[i] is not None and y1 >= 180:
+                        cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+            cv2.putText(result, 'Source FPS: ' + str(int(self._fps)), (0, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
+            cv2.putText(result, 'Internal FPS: ' + str(int(fps)), (0, 45),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
+            if (frame_counter % 120.0 == 0.0):
+                    info (f'Internal FPS: {int(fps)}.')
             if not nowindow:
-                cv2.imshow('TrafficCV Haar cascade classifier speed detector. Press q to quit.', result)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.imshow(f'{self.name}. Press any key to quit.', result)
+                if cv2.waitKey(1) != -1:
                     break
         cv2.destroyAllWindows()
 

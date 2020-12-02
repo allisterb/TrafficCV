@@ -4,9 +4,6 @@
 # ===============================================================================
 import os
 import sys
-import platform
-import time
-import math
 from logging import info, error, debug, warn
 
 import numpy as np
@@ -27,7 +24,6 @@ def input_tensor(interpreter):
   """Returns input tensor view as numpy array of shape (height, width, 3)."""
   tensor_index = interpreter.get_input_details()[0]['index']
   return interpreter.tensor(tensor_index)()[0]
-
 
 def set_input(interpreter, size, resize):
   """Copies a resized and properly zero-padded image to the input tensor.
@@ -80,6 +76,7 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
 
 class Detector(detector.Detector):
     """SSD MobileNet v1 neural network on TensorFlow Lite runtime using 1000 COCO categories."""
+    
     def load_labels(self, path, encoding='utf-8'):
         """Loads labels from file (with or without index numbers).
 
@@ -93,8 +90,8 @@ class Detector(detector.Detector):
             lines = f.readlines()
             if not lines:
                 return {}
-            if lines[0].split(':', maxsplit=1)[0].isdigit():
-                pairs = [line.split(':', maxsplit=1) for line in lines]
+            if lines[0].split(' ', maxsplit=1)[0].isdigit():
+                pairs = [line.split(' ', maxsplit=1) for line in lines]
                 return {int(index): label.strip() for index, label in pairs}
             else:
                 return {index: line.strip() for index, line in enumerate(lines)}
@@ -106,7 +103,7 @@ class Detector(detector.Detector):
     def __init__(self, model_dir, video_source, args):
         super().__init__("SSD MobileNet v1 neural network on TensorFlow Lite runtime using 1000 COCO categories", model_dir, video_source, args)
         self.model_file = os.path.join(model_dir, 'ssd_mobilenet_v1_1_metadata_1.tflite')        
-        self.labels_file = os.path.join('labels', 'coco_labels_1000.txt')
+        self.labels_file = os.path.join('labels', 'coco_labels.txt')
         if not os.path.exists(self.model_file):
             error(f'The TF Lite model file {self.model_file} does not exist.')
             sys.exit(1)
@@ -139,15 +136,15 @@ class Detector(detector.Detector):
         self.image_height = self.input_details[0]['shape'][1]
         self.image_width = self.input_details[0]['shape'][2]
     
-    def detect_objects(self, frame):
-        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        input_tensor = set_input(self.interpreter, image.size,
-                    lambda size: image.resize(size, Image.ANTIALIAS))
-        self.interpreter.invoke()
-        return get_output(self.interpreter, 0.6 , input_tensor)
-
     def get_label_for_index(self, idx):
         self.labels.get(idx, idx)
+
+    def detect_objects(self, frame):
+        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        t = set_input(self.interpreter, image.size,
+                    lambda size: image.resize(size, Image.ANTIALIAS))
+        self.interpreter.invoke()
+        return get_output(self.interpreter, 0.6 , t)
 
     def print_model_info(self):
         """

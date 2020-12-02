@@ -48,7 +48,7 @@ threading.Thread(target=kbinput.kb_capture_thread, args=(), name='kb_capture_thr
 if args.nowindow:
     info('Video window disabled. Press ENTER key to stop.')
 else:
-    info('Video window enabled. Press ENTER key or press q in the video window to stop.')
+    info('Video window enabled. Press ENTER key or press any key in the video window to stop.')
 
 if args.test:
     import cv2 as cv
