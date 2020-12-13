@@ -2,12 +2,14 @@ import sys
 import abc
 import math
 import time
+from queue import Queue
 from logging import info, error, warn, debug
 
 import numpy as np
 import cv2
-from imutils.video import FPS
 import dlib
+import psutil
+
 import kbinput
 
 class Detector(abc.ABC):
@@ -30,9 +32,14 @@ class Detector(abc.ABC):
         self.model_dir = model_dir
         self.video_source = video_source
         self.video = cv2.VideoCapture(self.video_source)
+        self.video_end = False
+        self.video_input = Queue()
+        self.video_output = Queue()
         self._height, self._width, self._fps = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FPS)) 
         info(f'Video resolution: {self._width}x{self._height} {self._fps}fps.')
         self.args = args
+
+    #def read(self):
 
     def estimate_speed(self, ppm, fps, location1, location2):
         """Estimate the speed of a vehicle assuming pixel-per-metre and fps constants."""
@@ -93,7 +100,6 @@ class Detector(abc.ABC):
                 #cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))        
                 cars = self.detect_objects(frame)
                 for c in cars:
-                    info('Object detected: %s (%.2f).' % (self.get_label_for_index(c.id), c.score))
                     x = int(c.bbox.xmin)
                     y = int(c.bbox.ymin)
                     w = int(c.bbox.xmax - c.bbox.xmin)
@@ -115,7 +121,7 @@ class Detector(abc.ABC):
                             matched_car_id = car_id
                     
                     if matched_car_id is None:
-                        debug (f'Creating new car tracker with id {current_car_id}.' )
+                        info (f'New object detected at ({x, y, w, h}) with id {current_car_id}.' )
                         tracker = dlib.correlation_tracker()
                         tracker.start_track(result, dlib.rectangle(x, y, x + w, y + h))
                         car_tracker[current_car_id] = tracker
@@ -146,9 +152,13 @@ class Detector(abc.ABC):
             cv2.putText(result, 'Source FPS: ' + str(int(self._fps)), (0, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             cv2.putText(result, 'Internal FPS: ' + str(int(fps)), (0, 45),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             if (frame_counter % 120.0 == 0.0):
-                    info (f'Internal FPS: {int(fps)}.')
+                # g = lambda x: f'CPU #{x[0]}: {x[1]}'
+                cpu_p = ""
+                for i, percentage in enumerate(psutil.cpu_percent(percpu=True, interval=1)):
+                    cpu_p += f"CPU#{i}: {percentage}% " 
+                info (f'Internal FPS: {int(fps)}. {cpu_p.strip()}.')
             if not nowindow:
-                cv2.imshow(f'{self.name}. Press any key to quit.', result)
+                cv2.imshow(f'TrafficCV {self.name}. Press any key to quit. ', result)
                 if cv2.waitKey(1) != -1:
                     break
         cv2.destroyAllWindows()
