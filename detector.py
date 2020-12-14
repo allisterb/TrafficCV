@@ -20,7 +20,7 @@ class Detector(abc.ABC):
         """Get the string label for an integer index."""
 
     @abc.abstractmethod
-    def detect_objects(self, frame):
+    def detect_objects(self, frame, score_threshold):
         """Detect objects in a video frame."""
 
     @abc.abstractmethod
@@ -65,6 +65,12 @@ class Detector(abc.ABC):
             fc = self.args['fc']
         else:
             info ('fc argument not specified. Using default value 10.')
+        score = 0.6
+        if 'score' in self.args:
+            score = self.args['score']
+        else:
+            info ('score argument not specified. Using default score threshold 0.6.')
+
         RECT_COLOR = (0, 255, 0)
         frame_counter = 0.0
         fps = 0.0
@@ -92,7 +98,7 @@ class Detector(abc.ABC):
                 car_location_2.pop(car_id, None)
             
             if not (frame_counter % fc):        
-                cars = self.detect_objects(frame)
+                cars = self.detect_objects(frame, score)
                 for c in cars:
                     x = int(c.bbox.xmin)
                     y = int(c.bbox.ymin)

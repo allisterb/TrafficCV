@@ -73,7 +73,7 @@ def get_output(interpreter, score_threshold, image_scale=(1.0, 1.0)):
                   xmax=xmax,
                   ymax=ymax).scale(sx, sy).map(int))
 
-  return [make(i) for i in range(count)] #if scores[i] >= score_threshold
+  return [make(i) for i in range(count) if scores[i] >= score_threshold]
 
 class Detector(detector.Detector):
     """SSD MobileNet v1 neural network using 80 COCO categories on TensorFlow Lite runtime on CPU"""
@@ -140,12 +140,12 @@ class Detector(detector.Detector):
     def get_label_for_index(self, idx):
         self.labels.get(idx, idx)
 
-    def detect_objects(self, frame):
+    def detect_objects(self, frame, score_threshold):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         t = set_input(self.interpreter, image.size,
                     lambda size: image.resize(size, Image.ANTIALIAS))
         self.interpreter.invoke()
-        return get_output(self.interpreter, 0.6 , t)
+        return get_output(self.interpreter, score_threshold, t)
 
     def print_model_info(self):
         """

@@ -27,7 +27,7 @@ class Detector(detector.Detector):
     def get_label_for_index(self, _):
         return 'car'
 
-    def detect_objects(self, frame):
+    def detect_objects(self, frame, score_threshold):
         image = cv2.cvtColor(cv2.resize(frame, (self.video_width, self.video_height)), cv2.COLOR_BGR2GRAY)
         cars = self.classifier.detectMultiScale(image, 1.1, 13, 18, (24, 24))
         scale_x, scale_y = (self._width / self.video_width), (self._height / self.video_height) 

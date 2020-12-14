@@ -152,12 +152,12 @@ class Detector(detector.Detector):
     def get_label_for_index(self, idx):
         self.labels.get(idx, idx)
 
-    def detect_objects(self, frame):
+    def detect_objects(self, frame, score_threshold):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         t = set_input(self.interpreter, image.size,
                     lambda size: image.resize(size, Image.ANTIALIAS))
         self.interpreter.invoke()
-        return get_output(self.interpreter, 0.6 , t)
+        return get_output(self.interpreter, score_threshold, t)
 
     def print_model_info(self):
         """
