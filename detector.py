@@ -136,11 +136,8 @@ class Detector(abc.ABC):
                 [x2, y2, w2, h2] = car_location_2[i]
                 car_location_1[i] = [x2, y2, w2, h2]
                 if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
-                    # Estimate speed for a car object as it passes through a ROI.
-                    if (speed[i] is None) and y1 >= 275 and y1 <= 285:
-                        speed[i] = self.estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
-                    if speed[i] is not None and y1 >= 180:
-                        cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+                    speed[i] = self.estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
+                    cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
             cv2.putText(result, 'Source FPS: ' + str(int(self._fps)), (0, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             cv2.putText(result, 'Internal FPS: ' + str(int(fps)), (0, 45),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             if (int(frame_counter) % fc == 0):
