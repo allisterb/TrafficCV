@@ -50,6 +50,9 @@ if args.test:
     if not cap.isOpened():
         error("Could not open default camera device.")
         sys.exit()
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720)
+    cap.set(cv.CAP_PROP_FPS, 60)
     height, width, fps = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv.CAP_PROP_FPS)) 
     info(f'Camera resolution: {width}x{height} {fps}fps.')
     while not kbinput.KBINPUT:

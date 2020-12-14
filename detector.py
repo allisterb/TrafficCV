@@ -33,8 +33,10 @@ class Detector(abc.ABC):
         self.video_source = video_source
         self.video = cv2.VideoCapture(self.video_source)
         self.video_end = False
-        self.video_input = Queue()
-        self.video_output = Queue()
+        if self.video_source == 0:
+                self.video.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                self.video.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+                self.video.set(cv2.CAP_PROP_FPS, 60)
         self._height, self._width, self._fps = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FPS)) 
         info(f'Video resolution: {self._width}x{self._height} {self._fps}fps.')
         self.args = args
@@ -113,7 +115,7 @@ class Detector(abc.ABC):
                             matched_car_id = car_id
                     
                     if matched_car_id is None:
-                        info (f'New object detected at ({x, y, w, h}) with id {current_car_id}.' )
+                        info (f'New object detected at {x, y, w, h} with id {current_car_id}.')
                         tracker = dlib.correlation_tracker()
                         tracker.start_track(result, dlib.rectangle(x, y, x + w, y + h))
                         car_tracker[current_car_id] = tracker
@@ -137,7 +139,7 @@ class Detector(abc.ABC):
                 car_location_1[i] = [x2, y2, w2, h2]
                 if [x1, y1, w1, h1] != [x2, y2, w2, h2]:
                     speed[i] = self.estimate_speed(ppm, fps, [x1, y1, w1, h1], [x2, y2, w2, h2])
-                    cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+                    cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (255, 255, 255), 1)
             cv2.putText(result, 'Source FPS: ' + str(int(self._fps)), (0, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             cv2.putText(result, 'Internal FPS: ' + str(int(fps)), (0, 45),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             if (int(frame_counter) % fc == 0):
