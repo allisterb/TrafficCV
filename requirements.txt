@@ -8,4 +8,4 @@ opencv-python>=4.4.0
 pyfiglet
 imutils
 json_minify
-getch
+psutil
