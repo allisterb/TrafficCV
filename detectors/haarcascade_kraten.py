@@ -28,10 +28,8 @@ class Detector(detector.Detector):
         return 'car'
 
     def detect_objects(self, frame):
-        frame_resized = cv2.resize(frame, (self.video_width, self.video_height))
-        frame_grayscale = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
         image = cv2.cvtColor(cv2.resize(frame, (self.video_width, self.video_height)), cv2.COLOR_BGR2GRAY)
-        cars = self.classifier.detectMultiScale(frame_grayscale, 1.1, 13, 18, (24, 24))
+        cars = self.classifier.detectMultiScale(image, 1.1, 13, 18, (24, 24))
         scale_x, scale_y = (self._width / self.video_width), (self._height / self.video_height) 
         def make(i):
             x, y, w, h = cars[i]

@@ -13,7 +13,7 @@ import psutil
 import kbinput
 
 class Detector(abc.ABC):
-    """A video object detector using a neural network or other deep learning model."""
+    """A video object detector using a neural network or other computer vision learning model."""
 
     @abc.abstractmethod
     def get_label_for_index(self, i):
@@ -38,8 +38,6 @@ class Detector(abc.ABC):
         self._height, self._width, self._fps = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FPS)) 
         info(f'Video resolution: {self._width}x{self._height} {self._fps}fps.')
         self.args = args
-
-    #def read(self):
 
     def estimate_speed(self, ppm, fps, location1, location2):
         """Estimate the speed of a vehicle assuming pixel-per-metre and fps constants."""
@@ -91,13 +89,7 @@ class Detector(abc.ABC):
                 car_location_1.pop(car_id, None)
                 car_location_2.pop(car_id, None)
             
-            if not (frame_counter % fc):
-                #image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                #input_tensor = tflite_detect.set_input(interpreter, image.size,
-                #            lambda size: image.resize(size, Image.ANTIALIAS))
-                #interpreter.invoke()
-                #cars = tflite_detect.get_output(interpreter, 0.6 , input_tensor)
-                #cars = classifier.detectMultiScale(gray, 1.1, 13, 18, (24, 24))        
+            if not (frame_counter % fc):        
                 cars = self.detect_objects(frame)
                 for c in cars:
                     x = int(c.bbox.xmin)
@@ -151,12 +143,11 @@ class Detector(abc.ABC):
                         cv2.putText(result, str(int(speed[i])) + " km/hr", (int(x1 + w1/2), int(y1-5)),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
             cv2.putText(result, 'Source FPS: ' + str(int(self._fps)), (0, 20),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
             cv2.putText(result, 'Internal FPS: ' + str(int(fps)), (0, 45),cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 255), 2)
-            if (frame_counter % 120.0 == 0.0):
-                # g = lambda x: f'CPU #{x[0]}: {x[1]}'
+            if (int(frame_counter) % fc == 0):
                 cpu_p = ""
-                for i, percentage in enumerate(psutil.cpu_percent(percpu=True, interval=1)):
-                    cpu_p += f"CPU#{i}: {percentage}% " 
-                info (f'Internal FPS: {int(fps)}. {cpu_p.strip()}.')
+                for i, percentage in enumerate(psutil.cpu_percent(percpu=True, interval=None)):
+                    cpu_p += f"CPU#{i + 1}: {percentage}%; " 
+                info (f'Internal FPS: {int(fps)}; {cpu_p.strip()} Objects currently tracked: {len(car_tracker)}.')
             if not nowindow:
                 cv2.imshow(f'TrafficCV {self.name}. Press any key to quit. ', result)
                 if cv2.waitKey(1) != -1:
