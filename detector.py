@@ -115,7 +115,7 @@ class Detector(abc.ABC):
                             matched_car_id = car_id
                     
                     if matched_car_id is None:
-                        info (f'New object detected at {x, y, w, h} with id {current_car_id}.')
+                        info (f'New object detected at {x, y, w, h} with id {current_car_id} and confidence score {c.score}.')
                         tracker = dlib.correlation_tracker()
                         tracker.start_track(result, dlib.rectangle(x, y, x + w, y + h))
                         car_tracker[current_car_id] = tracker

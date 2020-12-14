@@ -99,8 +99,12 @@ if model_dir.startswith(os.path.join('models', 'haarcascade')):
     haarcascade_kraten.Detector(model_dir, video, detector_args).run()
 
 elif model_dir == (os.path.join('models', 'ssd_mobilenet_v1_coco_tflite')):
-    from detectors import ssd_mobilenet_tflite_d
-    ssd_mobilenet_tflite_d.Detector(model_dir, video, detector_args).run()
+    from detectors import ssd_mobilenet_tflite
+    ssd_mobilenet_tflite.Detector(model_dir, video, detector_args).run()
+
+elif model_dir == (os.path.join('models', 'ssd_mobilenet_v1_coco_edgetpu')):
+    from detectors import ssd_mobilenet_edgetpu
+    ssd_mobilenet_edgetpu.Detector(model_dir, video, detector_args).run()
 
 elif model_dir.startswith(os.path.join('models', 'ssd_mobilenet_v1_coco')) and detector_args['edgetpu']:
     info("Using TensorFlow Lite on Edge TPU SSD MobileNetv1 for COCO.")
