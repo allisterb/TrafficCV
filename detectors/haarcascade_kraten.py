@@ -1,6 +1,6 @@
 # Uses code from label_image.py in the TensorFlow Lite object detection examples:
 # Copyright 2018 The TensorFlow Authors. All Rights Reserved.
-# See NOTICE for full attribution and license notice.
+# See THIRD-PARTY NOTICES for full attribution and license notice.
 # ===============================================================================
 import os
 import sys

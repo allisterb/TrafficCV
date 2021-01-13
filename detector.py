@@ -1,3 +1,7 @@
+# Contains code from https://github.com/kraten/vehicle-speed-check/blob/master/speed_check.py 
+# by Kartike Bansal.
+# ===========================================================================================
+
 import sys
 import abc
 import math
@@ -39,6 +43,7 @@ class Detector(abc.ABC):
                 self.video.set(cv2.CAP_PROP_FPS, 60)
         self._height, self._width, self._fps = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FPS)) 
         info(f'Video resolution: {self._width}x{self._height} {self._fps}fps.')
+        info(f'Model: {self.name}.')
         self.args = args
 
     def estimate_speed(self, ppm, fps, location1, location2):
@@ -67,11 +72,11 @@ class Detector(abc.ABC):
             info ('fc argument not specified. Using default value 10.')
         score = 0.6
         if 'score' in self.args:
-            score = self.args['score']
+            score = float(self.args['score'])
         else:
             info ('score argument not specified. Using default score threshold 0.6.')
 
-        RECT_COLOR = (0, 255, 0)
+        RECT_COLOR = (255, 0, 0)
         frame_counter = 0.0
         fps = 0.0
         current_car_id = 0
@@ -121,7 +126,7 @@ class Detector(abc.ABC):
                             matched_car_id = car_id
                     
                     if matched_car_id is None:
-                        info (f'New object detected at {x, y, w, h} with id {current_car_id} and confidence score {c.score}.')
+                        info (f'New object detected at {x, y, w, h} with category {c.id} and id {current_car_id} and confidence score {c.score}.')
                         tracker = dlib.correlation_tracker()
                         tracker.start_track(result, dlib.rectangle(x, y, x + w, y + h))
                         car_tracker[current_car_id] = tracker
@@ -134,7 +139,7 @@ class Detector(abc.ABC):
                 t_y = int(tracked_position.top())
                 t_w = int(tracked_position.width())
                 t_h = int(tracked_position.height())
-                cv2.rectangle(result, (t_x, t_y), (t_x + t_w, t_y + t_h), RECT_COLOR, 4)
+                cv2.rectangle(result, (t_x, t_y), (t_x + t_w, t_y + t_h), RECT_COLOR, 2)
                 car_location_2[car_id] = [t_x, t_y, t_w, t_h]
                 
             end_time = time.time()
