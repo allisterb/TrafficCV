@@ -133,4 +133,5 @@ dmypy.json
 demo_videos/
 models/
 results/
-models.tar.gz
+models.*
+demo_videos.*

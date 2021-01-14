@@ -1,5 +1,9 @@
 # Uses code from label_image.py in the TensorFlow Lite object detection examples:
 # Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+
+# Contains code from https://github.com/kraten/vehicle-speed-check/blob/master/speed_check.py 
+# by Kartike Bansal.
+
 # See THIRD-PARTY NOTICES for full attribution and license notice.
 # ===============================================================================
 import os
